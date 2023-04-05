@@ -13,10 +13,12 @@ Basically like `substr()` for MPEG-encoded files.
 ffslice file.mp4 start [end]
 ```
 
-You can specify relative start/end points with a leading + or -. For example:
+You can specify relative start/end points with a leading plus (+) or  minus (-).
+For example:
 
-+ `-30` means "start 30 seconds from the end of the video"
-+ `1:50 +42` means "start at 1m 50s, then end 42 seconds after that"
++ `fflsice file.mp4  -30` means "begin at 0:00 and end at 30 seconds from the end of the file"
++ `ffslice file.mp4  1:50 +42` means "begin at 1m 50s, then end 42 seconds after that"
++ `ffslice file.mp4  9:50 1:55:32` means "start at 9m 50s, then end at 1h 55m and 32s"
 
 ## Requirements
 
