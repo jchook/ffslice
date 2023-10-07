@@ -1,6 +1,7 @@
 # ffslice
 
-Extract segments of audio and video files, without re-encoding.
+A CLI utility to easily extract segments of audio and video files, without
+re-encoding.
 
 Basically like `substr()` for MPEG-encoded files.
 
@@ -13,12 +14,14 @@ Basically like `substr()` for MPEG-encoded files.
 ffslice file.mp4 start [end]
 ```
 
-You can specify relative start/end points with a leading plus (+) or  minus (-).
+You can specify times using H:M:S format, including relative start/end points
+with a leading plus (+) or  minus (-).
+
 For example:
 
-+ `fflsice file.mp4  -30` means "begin at 0:00 and end at 30 seconds from the end of the file"
-+ `ffslice file.mp4  1:50 +42` means "begin at 1m 50s, then end 42 seconds after that"
-+ `ffslice file.mp4  9:50 1:55:32` means "start at 9m 50s, then end at 1h 55m and 32s"
++ `fflsice file.mp4 -30` means "begin at 30 seconds from the end of the file"
++ `ffslice file.mp4 1:50 +42` means "begin at 1m 50s, then end 42 seconds after that"
++ `ffslice file.mp4 9:50 1:55:32` means "start at 9m 50s, then end at 1h 55m 32s"
 
 ## Requirements
 
