@@ -1,87 +1,93 @@
 #!/bin/bash
 #
-# substr() for MPEG-encoded files
-#
-# Works on video and audio files.
-#
-# Usage:
-# ffslice file.mp4 start [end]
-#
-# You can specify relative start/end points with a leading + or -.
-# For example, -30 means "start 30 seconds from the end of the video"
-# For example, 1:50 +42 means "start at 1m 50s, then end 42 seconds after that"
+# ffslice: slice audio/video files with absolute or relative start/end
 #
 
-if [ -z "$1" ]; then
-  printf '\n%s' "Usage:" "$(basename $0) INFILE START [END] [OUTFILE]"
+set -euo pipefail
+
+usage() {
+  echo "Usage: $(basename "$0") infile start [end] [outfile]"
+  echo "Example: $(basename "$0") audio.wav 3:25 3:35"
+  echo "Relative times:"
+  echo "  +10   10 seconds after start"
+  echo "  -5    5 seconds from the end"
   exit 1
-fi
+}
 
-set -x;
-
-if [ -z "$1" ]; then
-  echo "Usage:"
-  echo "$0 infile start [end]"
-  exit 1
-fi
+[[ $# -lt 2 ]] && usage
 
 infile="$1"; shift
 start="$1"; shift
-end="$1"; shift
-outfile="$1"; shift
-args=()
+end="${1:-}"; shift || true
+outfile="${1:-}"; shift || true
 
-# Convert time to seconds
-# https://unix.stackexchange.com/questions/412868/bash-reverse-an-array
+# Convert HH:MM:SS or MM:SS to seconds
 timetosec() {
-  rev="$(<<< "$1" tr ':' '\n' | sed 's/^0\+\([0-9]+\)/$1/' | tac | tr '\n' ' ')"
-  IFS=' ' read -a times <<< "$rev"
-  let secs="${times[0]:-0} + (${times[1]:-0} * 60) + (${times[2]:-0} * 3600)"
-  printf '%i' "$secs"
+  IFS=: read -r -a parts <<< "$1"
+  sec=0
+  factor=1
+  for (( i=${#parts[@]}-1; i>=0; i-- )); do
+    sec=$(( sec + parts[i]*factor ))
+    factor=$(( factor*60 ))
+  done
+  echo "$sec"
 }
 
-# Input file requred
-if [ -z "$infile" ]; then
-  echo "Usage: $(basename -- "$0") infile [start [end [outfile [ffmpeg-args]]]]" >&2
-  echo "Example: $(basename -- "$0") input.mp3 -5:00" >&2
-  exit 1
+# Build ffmpeg args
+args=()
+
+# Handle start
+if [[ "${start:0:1}" == "-" ]]; then
+  args+=("-sseof" "$start")
+  start_sec=0   # relative from EOF, handled by ffmpeg
+else
+  start_sec=$(timetosec "$start")
+  args+=("-ss" "$start_sec")
 fi
 
-# Start (negative starts from the end)
-if [ "${start:0:1}" = "-" ]; then args+=('-sseof' "$start")
-elif [ -n "$start" ]; then args+=('-ss' "$start")
+# Input file
+args+=("-i" "$infile")
+
+# Handle end
+if [[ -n "$end" ]]; then
+  if [[ "${end:0:1}" == "+" ]]; then
+    # relative to start
+    dur=${end:1}
+    args+=("-t" "$dur")
+  elif [[ "${end:0:1}" == "-" ]]; then
+    args+=("-to" "$end")
+  else
+    end_sec=$(timetosec "$end")
+    if [[ "${start:0:1}" == "-" ]]; then
+      echo "Absolute end time not supported when start is relative to EOF"
+      exit 1
+    fi
+    dur=$(( end_sec - start_sec ))
+    if (( dur <= 0 )); then
+      echo "Error: end must be after start"
+      exit 1
+    fi
+    args+=("-t" "$dur")
+  fi
 fi
 
-# Input
-args+=('-i' "$infile")
-
-# End (use + or - to specify relative to the starting point)
-if [ "${end:0:1}" = "+" ]; then args+=('-to' "$end")
-elif [ "${end:0:1}" = "-" ]; then args+=('-sseof' "$end")
-elif [ -n "$end" ]; then
-  let dur="$(timetosec "$end") - $(timetosec "$start")"
-  args+=('-to' "$dur")
+# Output file
+if [[ -z "$outfile" ]]; then
+  base="${infile%.*}"
+  ext="${infile##*.}"
+  outfile="${base}-${start}-${end}.${ext}"
+elif [[ -d "$outfile" ]]; then
+  # If outfile is a directory, generate filename inside it
+  base="$(basename "${infile%.*}")"
+  ext="${infile##*.}"
+  outfile="${outfile}/${base}-${start}-${end}.${ext}"
 fi
+outfile="${outfile//:/.}"  # replace colon
 
-# Default output filename
-filename=$(basename -- "$infile")
-extension="${filename##*.}"
-filename="${filename%.*}"
-defaultOutfile="${filename}-${start}-${end}.${extension}"
-if [ -z "$outfile" ]; then
-  outfile="$defaultOutfile"
-elif [ -d "$outfile" ]; then
-  outfile="${outfile}/${defaultOutfile}"
-fi
-
-# Cannot have colon in the filename with ffmpeg
-# https://unix.stackexchange.com/questions/412519/ffmpeg-protocol-not-found-for-normal-file-name
-outfile="$(printf '%s' "$outfile" | sed 's/:/./g')"
-
-# Slice audio
+# Slice audio/video (redirect output to stderr, forward extra args)
 set +x
 ffmpeg "${args[@]}" -c copy "$@" "$outfile" 1>&2
 set -x
 
-# Output the final location
+# Output the final absolute path
 printf '%s' "$(readlink -f "$outfile")"
