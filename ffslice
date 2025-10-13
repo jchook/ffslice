@@ -82,7 +82,10 @@ elif [[ -d "$outfile" ]]; then
   ext="${infile##*.}"
   outfile="${outfile}/${base}-${start}-${end}.${ext}"
 fi
-outfile="${outfile//:/.}"  # replace colon
+
+# Cannot have colon in the filename with ffmpeg
+# https://unix.stackexchange.com/questions/412519/ffmpeg-protocol-not-found-for-normal-file-name
+outfile="${outfile//:/.}"
 
 # Slice audio/video (redirect output to stderr, forward extra args)
 set +x
