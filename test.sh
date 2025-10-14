@@ -33,6 +33,14 @@ equals() {
   [ "$1" = "$2" ]
 }
 
+contains_all() {
+  local haystack="$1"
+  shift
+  for needle in "$@"; do
+    echo "$haystack" | contains "$needle" || return 1
+  done
+}
+
 # ---
 # Unit tests for timetosec
 # ---
@@ -62,53 +70,38 @@ test_timetosec_zero_padded() {
 # ---
 
 test_absolute_start_end() {
-  output=$(ffslice test.mp4 1:00 2:00)
-  echo "$output" | contains "-ss 60"
-  echo "$output" | contains "-i test.mp4"
-  echo "$output" | contains "-t 60"
-  echo "$output" | contains "-c copy"
+  contains_all "$(ffslice test.mp4 1:00 2:00)" "-ss 60" "-i test.mp4" "-t 60" "-c copy"
 }
 
 test_absolute_start_no_end() {
   output=$(ffslice test.mp4 30)
-  echo "$output" | contains "-ss 30"
-  echo "$output" | contains "-i test.mp4"
-  echo "$output" | contains "-c copy"
+  contains_all "$output" "-ss 30" "-i test.mp4" "-c copy"
   echo "$output" | not_contains "-t"
 }
 
 test_relative_start_from_end() {
-  output=$(ffslice test.mp4 -30)
-  echo "$output" | contains "-sseof -30"
-  echo "$output" | contains "-i test.mp4"
+  contains_all "$(ffslice test.mp4 -30)" "-sseof -30" "-i test.mp4"
 }
 
 test_relative_end_from_start() {
-  output=$(ffslice test.mp4 1:00 +30)
-  echo "$output" | contains "-ss 60"
-  echo "$output" | contains "-t 30"
+  contains_all "$(ffslice test.mp4 1:00 +30)" "-ss 60" "-t 30"
 }
 
 test_relative_end_from_file_end() {
-  output=$(ffslice test.mp4 1:00 -5)
-  echo "$output" | contains "-ss 60"
-  echo "$output" | contains "-to -5"
+  contains_all "$(ffslice test.mp4 1:00 -5)" "-ss 60" "-to -5"
 }
 
 test_default_output_filename() {
-  output=$(ffslice test.mp4 1:00 2:00)
-  echo "$output" | contains "test-1.00-2.00.mp4"
+  ffslice test.mp4 1:00 2:00 | contains "test-1.00-2.00.mp4"
 }
 
 test_custom_output_filename() {
-  output=$(ffslice test.mp4 1:00 2:00 custom.mp4)
-  echo "$output" | contains "custom.mp4"
+  ffslice test.mp4 1:00 2:00 custom.mp4 | contains "custom.mp4"
 }
 
 test_output_directory() {
   local tmpdir=$(mktemp -d)
-  output=$(ffslice test.mp4 1:00 2:00 "$tmpdir")
-  echo "$output" | contains "$tmpdir/test-1.00-2.00.mp4"
+  ffslice test.mp4 1:00 2:00 "$tmpdir" | contains "$tmpdir/test-1.00-2.00.mp4"
   rm -rf "$tmpdir"
 }
 
@@ -119,15 +112,11 @@ test_colon_replacement_in_filename() {
 }
 
 test_forward_extra_args() {
-  output=$(ffslice test.mp4 1:00 2:00 out.mp4 -preset fast -vf scale=640:480)
-  echo "$output" | contains "-preset fast"
-  echo "$output" | contains "-vf scale=640:480"
+  contains_all "$(ffslice test.mp4 1:00 2:00 out.mp4 -preset fast -vf scale=640:480)" "-preset fast" "-vf scale=640:480"
 }
 
 test_hours_minutes_seconds_format() {
-  output=$(ffslice test.mp4 0:01:30 0:02:45)
-  echo "$output" | contains "-ss 90"
-  echo "$output" | contains "-t 75"
+  contains_all "$(ffslice test.mp4 0:01:30 0:02:45)" "-ss 90" "-t 75"
 }
 
 # ---
@@ -155,8 +144,9 @@ test_missing_start_shows_usage() {
 # ---
 
 # Colorful output
+if [ -t 1 ]; then IS_TTY=1; else IS_TTY=; fi
 ttput() {
-  if [ -t 1 ]; then
+  if [ "$IS_TTY" = 1 ]; then
     tput "$@" 2>/dev/null
   fi
 }
