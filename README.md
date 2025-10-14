@@ -1,43 +1,142 @@
 # ffslice
 
-A CLI utility to easily extract segments of audio and video files, without
-re-encoding.
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/jchook/ffslice/releases)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](test.sh)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Basically like `substr()` for MPEG-encoded files.
+A fast, lightweight command-line utility for extracting segments from audio and video files without re-encoding. Built on `ffmpeg`, ffslice provides an intuitive interface for precise media slicing with support for absolute and relative timestamps.
 
 <img src="https://raw.githubusercontent.com/jchook/ffslice/main/assets/ffslice.jpg" width="480" />
 
+## Features
+
+- **Zero re-encoding** - Extract segments instantly using stream copy
+- **Flexible time formats** - Support for `HH:MM:SS`, `MM:SS`, or seconds
+- **Relative timestamps** - Specify times relative to start or end of file
+- **Batch processing** - Forward additional ffmpeg arguments for advanced workflows
+- **Directory output** - Auto-generate filenames when specifying output directories
 
 ## Usage
 
 ```sh
-ffslice file.mp4 start [end]
+ffslice infile start [end] [outfile] [ffmpeg-args...]
 ```
 
-You can specify times using H:M:S format, including relative start/end points
-with a leading plus (+) or  minus (-).
+### Time Formats
 
-For example:
+Times can be specified as:
+- Seconds: `30`
+- Minutes:seconds: `1:30`
+- Hours:minutes:seconds: `1:30:45`
 
-+ `fflsice file.mp4 -30` means "begin at 30 seconds from the end of the file"
-+ `ffslice file.mp4 1:50 +42` means "begin at 1m 50s, then end 42 seconds after that"
-+ `ffslice file.mp4 9:50 1:55:32` means "start at 9m 50s, then end at 1h 55m 32s"
+### Relative Times
 
-## Requirements
+Use `+` or `-` prefixes for relative positioning:
+- `+30` - 30 seconds after the start time
+- `-30` - 30 seconds before the end of the file
 
-This script is written in pure `bash` and it requires `ffmpeg`.
+### Examples
 
-## Example Use Cases
+**Extract the last 30 seconds:**
+```sh
+ffslice video.mp4 -30
+```
 
-- You have a long live show recording and want to extract one song to send to a friend
-- You want to extract a funny scene from your favorite show
+**Extract 42 seconds starting at 1m 50s:**
+```sh
+ffslice audio.wav 1:50 +42
+```
 
-## Known Bugs
+**Extract from 9m 50s to 1h 55m 32s:**
+```sh
+ffslice recording.mp4 9:50 1:55:32
+```
 
-I use this script frequently to extract segments from MixCloud mixes and YouTube
-videos. However, I am certain there are a few edge-case bugs with the start/end
-time logic. Feel free to fix it!
+**Specify output file and additional ffmpeg options:**
+```sh
+ffslice input.mp4 5:00 10:00 output.mp4 -preset ultrafast
+```
+
+**Auto-generate filename in a directory:**
+```sh
+ffslice podcast.mp3 15:30 20:45 ~/clips/
+# Creates: ~/clips/podcast-15.30-20.45.mp3
+```
+
+## Use Cases
+
+**Content Production:**
+- Extract highlights from long-form video content
+- Create social media clips from webinars or presentations
+- Isolate specific segments for editing workflows
+
+**Audio Processing:**
+- Extract individual tracks from live recordings
+- Create preview clips from podcasts or audiobooks
+- Isolate specific segments for transcription
+
+**Quality Assurance:**
+- Extract problematic segments for bug reports
+- Create reference clips for A/B testing
+- Isolate artifacts for analysis
+
+**Archival & Organization:**
+- Split large files into manageable segments
+- Extract key moments from recordings
+- Create highlights from meetings or lectures
+
+## Installation
+
+### Prerequisites
+
+- `bash` 4.0 or later
+- `ffmpeg`
+
+### Install
+
+```sh
+# Clone the repository
+git clone https://github.com/jchook/ffslice.git
+cd ffslice
+
+# Copy to PATH
+sudo cp ffslice /usr/local/bin/ffslice
+```
+
+Or copy `ffslice` to any directory in your `$PATH`.
+
+## Testing
+
+The project includes a comprehensive test suite:
+
+```sh
+./test.sh                 # Run all tests
+./test.sh "timetosec"     # Run specific test group
+```
+
+## How It Works
+
+ffslice uses `ffmpeg -c copy` to extract segments without re-encoding, which:
+- Preserves original quality
+- Executes nearly instantaneously
+- Avoids generation loss
+- Maintains original codec and container format
+
+**Note:** Filenames with colons are automatically converted to dots for compatibility with ffmpeg's protocol detection.
+
+## Dry-Run Mode
+
+Preview the ffmpeg command without execution:
+
+```sh
+FFSLICE_DRY_RUN=1 ffslice video.mp4 1:00 2:00
+# Outputs: ffmpeg -ss 60 -i video.mp4 -t 60 -c copy video-1.00-2.00.mp4
+```
 
 ## License
 
-MIT.
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests.
