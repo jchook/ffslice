@@ -4,7 +4,7 @@
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](test.sh)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Extract video and audio segments in milliseconds, not minutes.
+Slice audio and video files without re-encoding.
 
 ffslice wraps ffmpeg's stream copy into a simple CLI. No re-encoding means instant extraction with zero quality loss. Specify absolute timestamps like `1:30` or use relative syntax like `+42` for durations and `-30` for end-relative times. It's just a cleaner way to slice media.
 
@@ -12,12 +12,11 @@ ffslice wraps ffmpeg's stream copy into a simple CLI. No re-encoding means insta
 
 ## Features
 
-- **Zero re-encoding** - Extract segments instantly using stream copy, preserving perfect quality
-- **Flexible time formats** - Use `HH:MM:SS`, `MM:SS`, or plain seconds notation
-- **Intuitive relative times** - Use `+42` for "42 seconds after start time" or `-30` for "30 seconds from the end"
-- **Smart defaults** - Omit the end time to extract from start to end of file
-- **Advanced passthrough** - Forward any ffmpeg arguments for filters, presets, or codec options
-- **Directory output** - Auto-generate filenames when specifying output directories
+- **Zero re-encoding** - Instant extraction via stream copy with perfect quality
+- **Flexible time formats** - Supports `HH:MM:SS`, `MM:SS`, or seconds
+- **Relative timestamps** - `+42` for duration after start, `-30` for time before EOF
+- **Smart defaults** - Omit end time to extract until EOF
+- **ffmpeg passthrough** - Forward any ffmpeg arguments
 
 ## Usage
 
