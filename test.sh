@@ -34,8 +34,7 @@ equals() {
 }
 
 contains_all() {
-  local haystack="$1"
-  shift
+  local haystack="$(cat)"
   for needle in "$@"; do
     echo "$haystack" | contains "$needle" || return 1
   done
@@ -66,25 +65,25 @@ test_timetosec_zero_padded() {
 # ---
 
 test_absolute_start_end() {
-  contains_all "$(ffslice test.mp4 1:00 2:00)" "-ss 60" "-i test.mp4" "-t 60" "-c copy"
+  ffslice test.mp4 1:00 2:00 | contains_all "-ss 60" "-i test.mp4" "-t 60" "-c copy"
 }
 
 test_absolute_start_no_end() {
   output=$(ffslice test.mp4 30)
-  contains_all "$output" "-ss 30" "-i test.mp4" "-c copy"
+  echo "$output" | contains_all "-ss 30" "-i test.mp4" "-c copy"
   echo "$output" | not_contains "-t"
 }
 
 test_relative_start_from_end() {
-  contains_all "$(ffslice test.mp4 -30)" "-sseof -30" "-i test.mp4"
+  ffslice test.mp4 -30 | contains_all "-sseof -30" "-i test.mp4"
 }
 
 test_relative_end_from_start() {
-  contains_all "$(ffslice test.mp4 1:00 +30)" "-ss 60" "-t 30"
+  ffslice test.mp4 1:00 +30 | contains_all "-ss 60" "-t 30"
 }
 
 test_relative_end_from_file_end() {
-  contains_all "$(ffslice test.mp4 1:00 -5)" "-ss 60" "-to -5"
+  ffslice test.mp4 1:00 -5 | contains_all "-ss 60" "-to -5"
 }
 
 test_default_output_filename() {
@@ -108,11 +107,11 @@ test_colon_replacement_in_filename() {
 }
 
 test_forward_extra_args() {
-  contains_all "$(ffslice test.mp4 1:00 2:00 out.mp4 -preset fast -vf scale=640:480)" "-preset fast" "-vf scale=640:480"
+  ffslice test.mp4 1:00 2:00 out.mp4 -preset fast -vf scale=640:480 | contains_all "-preset fast" "-vf scale=640:480"
 }
 
 test_hours_minutes_seconds_format() {
-  contains_all "$(ffslice test.mp4 0:01:30 0:02:45)" "-ss 90" "-t 75"
+  ffslice test.mp4 0:01:30 0:02:45 | contains_all "-ss 90" "-t 75"
 }
 
 # ---
