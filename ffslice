@@ -24,7 +24,7 @@ timetosec() {
   echo "$sec"
 }
 
-main() {
+ffslice() {
   set -euo pipefail
 
   [[ $# -lt 2 ]] && usage
@@ -102,7 +102,7 @@ main() {
   fi
 }
 
-# Only run main if not being sourced (for testing)
+# Only run ffslice if not being sourced (for testing)
 if [[ "${BASH_SOURCE[0]:-}" == "${0}" ]]; then
-  main "$@"
+  ffslice "$@"
 fi

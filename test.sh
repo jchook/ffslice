@@ -49,7 +49,7 @@ test_timetosec_zero_padded() {
 # ---
 
 test_absolute_start_end() {
-  output=$(main test.mp4 1:00 2:00)
+  output=$(ffslice test.mp4 1:00 2:00)
   echo "$output" | grep -q -- "-ss 60"
   echo "$output" | grep -q -- "-i test.mp4"
   echo "$output" | grep -q -- "-t 60"
@@ -57,7 +57,7 @@ test_absolute_start_end() {
 }
 
 test_absolute_start_no_end() {
-  output=$(main test.mp4 30)
+  output=$(ffslice test.mp4 30)
   echo "$output" | grep -q -- "-ss 30"
   echo "$output" | grep -q -- "-i test.mp4"
   echo "$output" | grep -q -- "-c copy"
@@ -65,53 +65,53 @@ test_absolute_start_no_end() {
 }
 
 test_relative_start_from_end() {
-  output=$(main test.mp4 -30)
+  output=$(ffslice test.mp4 -30)
   echo "$output" | grep -q -- "-sseof -30"
   echo "$output" | grep -q -- "-i test.mp4"
 }
 
 test_relative_end_from_start() {
-  output=$(main test.mp4 1:00 +30)
+  output=$(ffslice test.mp4 1:00 +30)
   echo "$output" | grep -q -- "-ss 60"
   echo "$output" | grep -q -- "-t 30"
 }
 
 test_relative_end_from_file_end() {
-  output=$(main test.mp4 1:00 -5)
+  output=$(ffslice test.mp4 1:00 -5)
   echo "$output" | grep -q -- "-ss 60"
   echo "$output" | grep -q -- "-to -5"
 }
 
 test_default_output_filename() {
-  output=$(main test.mp4 1:00 2:00)
+  output=$(ffslice test.mp4 1:00 2:00)
   echo "$output" | grep -q "test-1.00-2.00.mp4"
 }
 
 test_custom_output_filename() {
-  output=$(main test.mp4 1:00 2:00 custom.mp4)
+  output=$(ffslice test.mp4 1:00 2:00 custom.mp4)
   echo "$output" | grep -q "custom.mp4"
 }
 
 test_output_directory() {
   mkdir -p /tmp/ffslice-test/outdir
-  output=$(main test.mp4 1:00 2:00 /tmp/ffslice-test/outdir)
+  output=$(ffslice test.mp4 1:00 2:00 /tmp/ffslice-test/outdir)
   echo "$output" | grep -q "/tmp/ffslice-test/outdir/test-1.00-2.00.mp4"
 }
 
 test_colon_replacement_in_filename() {
-  output=$(main test.mp4 1:00 2:00)
+  output=$(ffslice test.mp4 1:00 2:00)
   echo "$output" | grep -q "test-1.00-2.00.mp4"
   ! echo "$output" | grep -q "1:00"
 }
 
 test_forward_extra_args() {
-  output=$(main test.mp4 1:00 2:00 out.mp4 -preset fast -vf scale=640:480)
+  output=$(ffslice test.mp4 1:00 2:00 out.mp4 -preset fast -vf scale=640:480)
   echo "$output" | grep -q -- "-preset fast"
   echo "$output" | grep -q -- "-vf scale=640:480"
 }
 
 test_hours_minutes_seconds_format() {
-  output=$(main test.mp4 0:01:30 0:02:45)
+  output=$(ffslice test.mp4 0:01:30 0:02:45)
   echo "$output" | grep -q -- "-ss 90"
   echo "$output" | grep -q -- "-t 75"
 }
@@ -121,35 +121,19 @@ test_hours_minutes_seconds_format() {
 # ---
 
 test_absolute_end_with_relative_start_fails() {
-  if main test.mp4 -30 1:00 2>&1 | grep -q "Absolute end time not supported"; then
-    return 0
-  else
-    return 1
-  fi
+  ffslice test.mp4 -30 1:00 2>&1 | grep -q "Absolute end time not supported"
 }
 
 test_end_before_start_fails() {
-  if main test.mp4 2:00 1:00 2>&1 | grep -q "end must be after start"; then
-    return 0
-  else
-    return 1
-  fi
+  ffslice test.mp4 2:00 1:00 2>&1 | grep -q "end must be after start"
 }
 
 test_missing_arguments_shows_usage() {
-  if main 2>&1 | grep -q "Usage:"; then
-    return 0
-  else
-    return 1
-  fi
+  ffslice 2>&1 | grep -q "Usage:"
 }
 
 test_missing_start_shows_usage() {
-  if main test.mp4 2>&1 | grep -q "Usage:"; then
-    return 0
-  else
-    return 1
-  fi
+  ffslice test.mp4 2>&1 | grep -q "Usage:"
 }
 
 # ---
