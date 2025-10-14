@@ -4,16 +4,19 @@
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](test.sh)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A fast, lightweight command-line utility for extracting segments from audio and video files without re-encoding. Built on `ffmpeg`, ffslice provides an intuitive interface for precise media slicing with support for absolute and relative timestamps.
+Extract video and audio segments in milliseconds, not minutes.
+
+ffslice wraps ffmpeg's stream copy into a simple CLI. No re-encoding means instant extraction with zero quality loss. Specify absolute timestamps like `1:30` or use relative syntax like `+42` for durations and `-30` for end-relative times. It's just a cleaner way to slice media.
 
 <img src="https://raw.githubusercontent.com/jchook/ffslice/main/assets/ffslice.jpg" width="480" />
 
 ## Features
 
-- **Zero re-encoding** - Extract segments instantly using stream copy
-- **Flexible time formats** - Support for `HH:MM:SS`, `MM:SS`, or seconds
-- **Relative timestamps** - Specify times relative to start or end of file
-- **Batch processing** - Forward additional ffmpeg arguments for advanced workflows
+- **Zero re-encoding** - Extract segments instantly using stream copy, preserving perfect quality
+- **Flexible time formats** - Use `HH:MM:SS`, `MM:SS`, or plain seconds notation
+- **Intuitive relative times** - Use `+42` for "42 seconds after start time" or `-30` for "30 seconds from the end"
+- **Smart defaults** - Omit the end time to extract from start to end of file
+- **Advanced passthrough** - Forward any ffmpeg arguments for filters, presets, or codec options
 - **Directory output** - Auto-generate filenames when specifying output directories
 
 ## Usage
@@ -32,8 +35,8 @@ Times can be specified as:
 ### Relative Times
 
 Use `+` or `-` prefixes for relative positioning:
-- `+30` - 30 seconds after the start time
-- `-30` - 30 seconds before the end of the file
+- `+42` - 42 seconds **after the start time** (e.g., start at 4:00, end at 4:42)
+- `-30` - 30 seconds **before the end of the file** (e.g., start 30 seconds from EOF)
 
 ### Examples
 
