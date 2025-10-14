@@ -3,8 +3,6 @@
 # ffslice: slice audio/video files with absolute or relative start/end
 #
 
-set -euo pipefail
-
 usage() {
   echo "Usage: $(basename "$0") infile start [end] [outfile]"
   echo "Example: $(basename "$0") audio.wav 3:25 3:35"
@@ -13,13 +11,6 @@ usage() {
   echo "  -5    5 seconds from the end"
   exit 1
 }
-
-[[ $# -lt 2 ]] && usage
-
-infile="$1"; shift
-start="$1"; shift
-end="${1:-}"; shift || true
-outfile="${1:-}"; shift || true
 
 # Convert HH:MM:SS or MM:SS to seconds
 timetosec() {
@@ -33,64 +24,85 @@ timetosec() {
   echo "$sec"
 }
 
-# Build ffmpeg args
-args=()
+main() {
+  set -euo pipefail
 
-# Handle start
-if [[ "${start:0:1}" == "-" ]]; then
-  args+=("-sseof" "$start")
-  start_sec=0   # relative from EOF, handled by ffmpeg
-else
-  start_sec=$(timetosec "$start")
-  args+=("-ss" "$start_sec")
-fi
+  [[ $# -lt 2 ]] && usage
 
-# Input file
-args+=("-i" "$infile")
+  local infile="$1"; shift
+  local start="$1"; shift
+  local end="${1:-}"; shift || true
+  local outfile="${1:-}"; shift || true
 
-# Handle end
-if [[ -n "$end" ]]; then
-  if [[ "${end:0:1}" == "+" ]]; then
-    # relative to start
-    dur=${end:1}
-    args+=("-t" "$dur")
-  elif [[ "${end:0:1}" == "-" ]]; then
-    args+=("-to" "$end")
+  # Build ffmpeg args
+  local args=()
+  local start_sec end_sec dur
+
+  # Handle start
+  if [[ "${start:0:1}" == "-" ]]; then
+    args+=("-sseof" "$start")
+    start_sec=0   # relative from EOF, handled by ffmpeg
   else
-    end_sec=$(timetosec "$end")
-    if [[ "${start:0:1}" == "-" ]]; then
-      echo "Absolute end time not supported when start is relative to EOF"
-      exit 1
-    fi
-    dur=$(( end_sec - start_sec ))
-    if (( dur <= 0 )); then
-      echo "Error: end must be after start"
-      exit 1
-    fi
-    args+=("-t" "$dur")
+    start_sec=$(timetosec "$start")
+    args+=("-ss" "$start_sec")
   fi
+
+  # Input file
+  args+=("-i" "$infile")
+
+  # Handle end
+  if [[ -n "$end" ]]; then
+    if [[ "${end:0:1}" == "+" ]]; then
+      # relative to start
+      dur=${end:1}
+      args+=("-t" "$dur")
+    elif [[ "${end:0:1}" == "-" ]]; then
+      args+=("-to" "$end")
+    else
+      end_sec=$(timetosec "$end")
+      if [[ "${start:0:1}" == "-" ]]; then
+        echo "Absolute end time not supported when start is relative to EOF"
+        exit 1
+      fi
+      dur=$(( end_sec - start_sec ))
+      if (( dur <= 0 )); then
+        echo "Error: end must be after start"
+        exit 1
+      fi
+      args+=("-t" "$dur")
+    fi
+  fi
+
+  # Output file
+  if [[ -z "$outfile" ]]; then
+    local base="${infile%.*}"
+    local ext="${infile##*.}"
+    outfile="${base}-${start}-${end}.${ext}"
+  elif [[ -d "$outfile" ]]; then
+    # If outfile is a directory, generate filename inside it
+    local base="$(basename "${infile%.*}")"
+    local ext="${infile##*.}"
+    outfile="${outfile}/${base}-${start}-${end}.${ext}"
+  fi
+
+  # Cannot have colon in the filename with ffmpeg
+  # https://unix.stackexchange.com/questions/412519/ffmpeg-protocol-not-found-for-normal-file-name
+  outfile="${outfile//:/.}"
+
+  # Slice audio/video (redirect output to stderr, forward extra args)
+  if [ -n "${FFSLICE_TEST_MODE:-}" ]; then
+    # Test mode: print the command instead of executing it
+    echo "ffmpeg ${args[*]} -c copy $* $outfile"
+  else
+    set +x
+    ffmpeg "${args[@]}" -c copy "$@" "$outfile" 1>&2
+    # Output the final absolute path
+    printf '%s' "$(readlink -f "$outfile")"
+    set -x
+  fi
+}
+
+# Only run main if not being sourced (for testing)
+if [[ "${BASH_SOURCE[0]:-}" == "${0}" ]]; then
+  main "$@"
 fi
-
-# Output file
-if [[ -z "$outfile" ]]; then
-  base="${infile%.*}"
-  ext="${infile##*.}"
-  outfile="${base}-${start}-${end}.${ext}"
-elif [[ -d "$outfile" ]]; then
-  # If outfile is a directory, generate filename inside it
-  base="$(basename "${infile%.*}")"
-  ext="${infile##*.}"
-  outfile="${outfile}/${base}-${start}-${end}.${ext}"
-fi
-
-# Cannot have colon in the filename with ffmpeg
-# https://unix.stackexchange.com/questions/412519/ffmpeg-protocol-not-found-for-normal-file-name
-outfile="${outfile//:/.}"
-
-# Slice audio/video (redirect output to stderr, forward extra args)
-set +x
-ffmpeg "${args[@]}" -c copy "$@" "$outfile" 1>&2
-set -x
-
-# Output the final absolute path
-printf '%s' "$(readlink -f "$outfile")"
