@@ -7,8 +7,8 @@
 # To run a single test, pass part of the test description as the first argument.
 #
 
-# Enable test mode
-export FFSLICE_TEST_MODE=1
+# Enable dry-run mode (prints commands instead of executing)
+export FFSLICE_DRY_RUN=1
 
 # Source the ffslice script to get access to functions
 source "$(dirname "$0")/ffslice"
@@ -16,9 +16,22 @@ source "$(dirname "$0")/ffslice"
 # Blow up on errors
 set -e
 
-# Create temp dir for test output files
-mkdir -p /tmp/ffslice-test
-cd /tmp/ffslice-test
+# ---
+# Test helpers
+# Add more helpers here as needed to keep tests readable
+# ---
+
+contains() {
+  grep -q -- "$@"
+}
+
+not_contains() {
+  ! grep -q -- "$@"
+}
+
+equals() {
+  [ "$1" = "$2" ]
+}
 
 # ---
 # Unit tests for timetosec
@@ -26,22 +39,22 @@ cd /tmp/ffslice-test
 
 test_timetosec_seconds() {
   result=$(timetosec "30")
-  [ "$result" -eq 30 ]
+  equals "$result" "30"
 }
 
 test_timetosec_minutes_seconds() {
   result=$(timetosec "1:30")
-  [ "$result" -eq 90 ]
+  equals "$result" "90"
 }
 
 test_timetosec_hours_minutes_seconds() {
   result=$(timetosec "1:30:45")
-  [ "$result" -eq 5445 ]
+  equals "$result" "5445"
 }
 
 test_timetosec_zero_padded() {
   result=$(timetosec "01:05:03")
-  [ "$result" -eq 3903 ]
+  equals "$result" "3903"
 }
 
 # ---
@@ -50,70 +63,71 @@ test_timetosec_zero_padded() {
 
 test_absolute_start_end() {
   output=$(ffslice test.mp4 1:00 2:00)
-  echo "$output" | grep -q -- "-ss 60"
-  echo "$output" | grep -q -- "-i test.mp4"
-  echo "$output" | grep -q -- "-t 60"
-  echo "$output" | grep -q -- "-c copy"
+  echo "$output" | contains "-ss 60"
+  echo "$output" | contains "-i test.mp4"
+  echo "$output" | contains "-t 60"
+  echo "$output" | contains "-c copy"
 }
 
 test_absolute_start_no_end() {
   output=$(ffslice test.mp4 30)
-  echo "$output" | grep -q -- "-ss 30"
-  echo "$output" | grep -q -- "-i test.mp4"
-  echo "$output" | grep -q -- "-c copy"
-  ! echo "$output" | grep -q -- "-t"
+  echo "$output" | contains "-ss 30"
+  echo "$output" | contains "-i test.mp4"
+  echo "$output" | contains "-c copy"
+  echo "$output" | not_contains "-t"
 }
 
 test_relative_start_from_end() {
   output=$(ffslice test.mp4 -30)
-  echo "$output" | grep -q -- "-sseof -30"
-  echo "$output" | grep -q -- "-i test.mp4"
+  echo "$output" | contains "-sseof -30"
+  echo "$output" | contains "-i test.mp4"
 }
 
 test_relative_end_from_start() {
   output=$(ffslice test.mp4 1:00 +30)
-  echo "$output" | grep -q -- "-ss 60"
-  echo "$output" | grep -q -- "-t 30"
+  echo "$output" | contains "-ss 60"
+  echo "$output" | contains "-t 30"
 }
 
 test_relative_end_from_file_end() {
   output=$(ffslice test.mp4 1:00 -5)
-  echo "$output" | grep -q -- "-ss 60"
-  echo "$output" | grep -q -- "-to -5"
+  echo "$output" | contains "-ss 60"
+  echo "$output" | contains "-to -5"
 }
 
 test_default_output_filename() {
   output=$(ffslice test.mp4 1:00 2:00)
-  echo "$output" | grep -q "test-1.00-2.00.mp4"
+  echo "$output" | contains "test-1.00-2.00.mp4"
 }
 
 test_custom_output_filename() {
   output=$(ffslice test.mp4 1:00 2:00 custom.mp4)
-  echo "$output" | grep -q "custom.mp4"
+  echo "$output" | contains "custom.mp4"
 }
 
 test_output_directory() {
-  mkdir -p /tmp/ffslice-test/outdir
-  output=$(ffslice test.mp4 1:00 2:00 /tmp/ffslice-test/outdir)
-  echo "$output" | grep -q "/tmp/ffslice-test/outdir/test-1.00-2.00.mp4"
+  local tmpdir=$(mktemp -d)
+  output=$(ffslice test.mp4 1:00 2:00 "$tmpdir")
+  echo "$output" | contains "$tmpdir/test-1.00-2.00.mp4"
+  rm -rf "$tmpdir"
 }
 
 test_colon_replacement_in_filename() {
   output=$(ffslice test.mp4 1:00 2:00)
-  echo "$output" | grep -q "test-1.00-2.00.mp4"
-  ! echo "$output" | grep -q "1:00"
+  echo "$output" | contains "test-1.00-2.00.mp4"
+  echo "$output" | not_contains "1:00"
 }
 
 test_forward_extra_args() {
   output=$(ffslice test.mp4 1:00 2:00 out.mp4 -preset fast -vf scale=640:480)
-  echo "$output" | grep -q -- "-preset fast"
-  echo "$output" | grep -q -- "-vf scale=640:480"
+  echo "$output" | contains "-preset fast"
+  echo "$output" | contains "-vf scale=640:480"
 }
 
 test_hours_minutes_seconds_format() {
   output=$(ffslice test.mp4 0:01:30 0:02:45)
-  echo "$output" | grep -q -- "-ss 90"
-  echo "$output" | grep -q -- "-t 75"
+  echo "$output" | contains "-ss 90"
+  echo "$output" | contains "-t 75"
 }
 
 # ---
@@ -121,19 +135,19 @@ test_hours_minutes_seconds_format() {
 # ---
 
 test_absolute_end_with_relative_start_fails() {
-  ffslice test.mp4 -30 1:00 2>&1 | grep -q "Absolute end time not supported"
+  ffslice test.mp4 -30 1:00 2>&1 | contains "Absolute end time not supported"
 }
 
 test_end_before_start_fails() {
-  ffslice test.mp4 2:00 1:00 2>&1 | grep -q "end must be after start"
+  ffslice test.mp4 2:00 1:00 2>&1 | contains "end must be after start"
 }
 
 test_missing_arguments_shows_usage() {
-  ffslice 2>&1 | grep -q "Usage:"
+  ffslice 2>&1 | contains "Usage:"
 }
 
 test_missing_start_shows_usage() {
-  ffslice test.mp4 2>&1 | grep -q "Usage:"
+  ffslice test.mp4 2>&1 | contains "Usage:"
 }
 
 # ---
@@ -162,9 +176,6 @@ for test_fn in $(declare -F | awk '/declare -f test_/ {print $NF}'); do
   $test_fn
   printf "\r%s\n" "${GREEN}✓${NONE}"
 done
-
-# Clean-up
-rm -rf /tmp/ffslice-test
 
 echo ""
 echo "All tests passed!"

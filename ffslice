@@ -90,8 +90,8 @@ ffslice() {
   outfile="${outfile//:/.}"
 
   # Slice audio/video (redirect output to stderr, forward extra args)
-  if [ -n "${FFSLICE_TEST_MODE:-}" ]; then
-    # Test mode: print the command instead of executing it
+  if [ -n "${FFSLICE_DRY_RUN:-}" ]; then
+    # Dry-run mode: print the command instead of executing it
     echo "ffmpeg ${args[*]} -c copy $* $outfile"
   else
     set +x
