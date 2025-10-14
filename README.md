@@ -65,6 +65,22 @@ ffslice podcast.mp3 15:30 20:45 ~/clips/
 # Creates: ~/clips/podcast-15.30-20.45.mp3
 ```
 
+## Installation
+
+Requires `ffmpeg` and `bash`.
+
+```sh
+# Clone the repository
+git clone https://github.com/jchook/ffslice.git
+cd ffslice
+
+# Copy to PATH
+sudo cp ffslice /usr/local/bin
+```
+
+Or copy `ffslice` to any directory in your `$PATH`.
+
+
 ## Use Cases
 
 **Content Production:**
@@ -87,25 +103,6 @@ ffslice podcast.mp3 15:30 20:45 ~/clips/
 - Extract key moments from recordings
 - Create highlights from meetings or lectures
 
-## Installation
-
-### Prerequisites
-
-- `bash` 4.0 or later
-- `ffmpeg`
-
-### Install
-
-```sh
-# Clone the repository
-git clone https://github.com/jchook/ffslice.git
-cd ffslice
-
-# Copy to PATH
-sudo cp ffslice /usr/local/bin/ffslice
-```
-
-Or copy `ffslice` to any directory in your `$PATH`.
 
 ## How It Works
 
@@ -116,19 +113,6 @@ ffslice uses `ffmpeg -c copy` to extract segments without re-encoding, which:
 - Maintains original codec and container format
 
 **Note:** Filenames with colons are automatically converted to dots for compatibility with ffmpeg's protocol detection.
-
-## Dry-Run Mode
-
-Preview the ffmpeg command without execution:
-
-```sh
-FFSLICE_DRY_RUN=1 ffslice video.mp4 1:00 2:00
-# Outputs: ffmpeg -ss 60 -i video.mp4 -t 60 -c copy video-1.00-2.00.mp4
-```
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Development
 
@@ -143,8 +127,21 @@ Run the comprehensive test suite:
 
 The test suite includes 19 tests covering time conversion, command construction, and error handling.
 
+### Dry-Run Mode
+
+Preview the ffmpeg command without execution:
+
+```sh
+FFSLICE_DRY_RUN=1 ffslice video.mp4 1:00 2:00
+# Outputs: ffmpeg -ss 60 -i video.mp4 -t 60 -c copy video-1.00-2.00.mp4
+```
+
 ### Contributing
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
 
 When adding new functionality, please include tests in `test.sh`. The test suite uses a simple bash harness with helpers like `contains()` and `equals()` to keep tests readable.
+
+## License
+
+MIT.
