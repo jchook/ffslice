@@ -107,15 +107,6 @@ sudo cp ffslice /usr/local/bin/ffslice
 
 Or copy `ffslice` to any directory in your `$PATH`.
 
-## Testing
-
-The project includes a comprehensive test suite:
-
-```sh
-./test.sh                 # Run all tests
-./test.sh "timetosec"     # Run specific test group
-```
-
 ## How It Works
 
 ffslice uses `ffmpeg -c copy` to extract segments without re-encoding, which:
@@ -139,6 +130,21 @@ FFSLICE_DRY_RUN=1 ffslice video.mp4 1:00 2:00
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## Contributing
+## Development
+
+### Testing
+
+Run the comprehensive test suite:
+
+```sh
+./test.sh                 # Run all tests
+./test.sh "timetosec"     # Run specific test group
+```
+
+The test suite includes 19 tests covering time conversion, command construction, and error handling.
+
+### Contributing
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
+
+When adding new functionality, please include tests in `test.sh`. The test suite uses a simple bash harness with helpers like `contains()` and `equals()` to keep tests readable.
