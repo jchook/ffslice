@@ -155,9 +155,8 @@ test_missing_start_shows_usage() {
 # ---
 
 # Colorful output
-if [ -t 1 ]; then IS_TTY=1; else IS_TTY=; fi
 ttput() {
-  if [ "$IS_TTY" = 1 ]; then
+  if [ -t 1 ]; then
     tput "$@" 2>/dev/null
   fi
 }
