@@ -46,23 +46,19 @@ contains_all() {
 # ---
 
 test_timetosec_seconds() {
-  result=$(timetosec "30")
-  equals "$result" "30"
+  equals "$(timetosec "30")" "30"
 }
 
 test_timetosec_minutes_seconds() {
-  result=$(timetosec "1:30")
-  equals "$result" "90"
+  equals "$(timetosec "1:30")" "90"
 }
 
 test_timetosec_hours_minutes_seconds() {
-  result=$(timetosec "1:30:45")
-  equals "$result" "5445"
+  equals "$(timetosec "1:30:45")" "5445"
 }
 
 test_timetosec_zero_padded() {
-  result=$(timetosec "01:05:03")
-  equals "$result" "3903"
+  equals "$(timetosec "01:05:03")" "3903"
 }
 
 # ---
