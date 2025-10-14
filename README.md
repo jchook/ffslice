@@ -5,7 +5,7 @@ re-encoding.
 
 Basically like `substr()` for MPEG-encoded files.
 
-<img src="https://raw.githubusercontent.com/jchook/ffslice/main/assets/ffslice.png" width="480" />
+<img src="https://raw.githubusercontent.com/jchook/ffslice/main/assets/ffslice.jpg" width="480" />
 
 
 ## Usage
