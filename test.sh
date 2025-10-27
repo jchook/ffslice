@@ -78,16 +78,48 @@ test_absolute_start_no_end() {
   echo "$output" | not_contains "-t"
 }
 
+test_relative_start_from_start() {
+  ffslice test.mp4 +90 | contains_all "-ss 90" "-i test.mp4"
+}
+
 test_relative_start_from_end() {
   ffslice test.mp4 -30 | contains_all "-sseof -30" "-i test.mp4"
+}
+
+test_relative_start_from_end_with_time_format() {
+  ffslice test.mp4 -1:30 | contains_all "-sseof -90" "-i test.mp4"
+}
+
+test_relative_start_from_end_with_hour_format() {
+  ffslice test.mp4 -1:00:00 | contains_all "-sseof -3600" "-i test.mp4"
 }
 
 test_relative_end_from_start() {
   ffslice test.mp4 1:00 +30 | contains_all "-ss 60" "-t 30"
 }
 
+test_relative_end_with_time_format() {
+  ffslice test.mp4 1:00 +1:30 | contains_all "-ss 60" "-t 90"
+}
+
+test_relative_end_with_hour_format() {
+  ffslice test.mp4 30:00 +1:00:00 | contains_all "-ss 1800" "-t 3600"
+}
+
 test_relative_end_from_file_end() {
   ffslice test.mp4 1:00 -5 | contains_all "-ss 60" "-to -5"
+}
+
+test_relative_end_from_file_end_with_time_format() {
+  ffslice test.mp4 1:00 -2:30 | contains_all "-ss 60" "-to -150"
+}
+
+test_relative_end_from_file_end_with_hour_format() {
+  ffslice test.mp4 30:00 -0:30:00 | contains_all "-ss 1800" "-to -1800"
+}
+
+test_both_start_and_end_relative_to_eof() {
+  ffslice test.mp4 -2:00:00 -30:00 | contains_all "-sseof -7200" "-to -1800"
 }
 
 test_default_output_filename() {

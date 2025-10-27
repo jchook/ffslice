@@ -6,7 +6,7 @@
 
 Slice audio and video files without re-encoding.
 
-ffslice wraps ffmpeg's stream copy into a simple CLI. No re-encoding means instant extraction with zero quality loss. Specify absolute timestamps like `1:30` or use relative syntax like `+42` for durations and `-30` for end-relative times. It's just a cleaner way to slice media.
+ffslice wraps ffmpeg's stream copy into a simple CLI. No re-encoding means instant extraction with zero quality loss. Specify absolute timestamps like `1:30` or use relative syntax like `+42` for durations and `-30` for times relative to the end.
 
 <img src="https://raw.githubusercontent.com/jchook/ffslice/main/assets/ffslice.jpg" width="480" />
 
@@ -35,7 +35,7 @@ Times can be specified as:
 
 Use `+` or `-` prefixes for relative positioning:
 - `+42` - 42 seconds **after the start time** (e.g., start at 4:00, end at 4:42)
-- `-30` - 30 seconds **before the end of the file** (e.g., start 30 seconds from EOF)
+- `-2:11` - 2 minutes 11 seconds **before the end of the file**
 
 ### Examples
 
@@ -44,9 +44,9 @@ Use `+` or `-` prefixes for relative positioning:
 ffslice video.mp4 -30
 ```
 
-**Extract 42 seconds starting at 1m 50s:**
+**Starting at 1m 50s, extract 1m 30s of content:**
 ```sh
-ffslice audio.wav 1:50 +42
+ffslice audio.wav 1:50 +1:30
 ```
 
 **Extract from 9m 50s to 1h 55m 32s:**
@@ -54,15 +54,14 @@ ffslice audio.wav 1:50 +42
 ffslice recording.mp4 9:50 1:55:32
 ```
 
-**Specify output file and additional ffmpeg options:**
+**Extract from 2 hours before EOF to 30 minutes before EOF:**
 ```sh
-ffslice input.mp4 5:00 10:00 output.mp4 -preset ultrafast
+ffslice movie.mp4 -2:00:00 -30:00
 ```
 
-**Auto-generate filename in a directory:**
+**Forward ffmpeg options:**
 ```sh
-ffslice podcast.mp3 15:30 20:45 ~/clips/
-# Creates: ~/clips/podcast-15.30-20.45.mp3
+ffslice input.mp4 5:00 10:00 output.mp4 -preset ultrafast
 ```
 
 ## Installation
@@ -121,8 +120,11 @@ ffslice uses `ffmpeg -c copy` to extract segments without re-encoding, which:
 Run the comprehensive test suite:
 
 ```sh
-./test.sh                 # Run all tests
-./test.sh "timetosec"     # Run specific test group
+# Run all tests
+./test.sh
+
+# Run tests matching a string
+./test.sh "timetosec"
 ```
 
 The test suite includes 19 tests covering time conversion, command construction, and error handling.

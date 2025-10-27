@@ -4,7 +4,7 @@
 #
 
 usage() {
-  echo "Usage: $(basename "$0") infile start [end] [outfile]"
+  echo "Usage: $(basename "$0") infile start [end] [outfile] [ffmpeg-args]"
   echo "Example: $(basename "$0") audio.wav 3:25 3:35"
   echo "Relative times:"
   echo "  +10   10 seconds after start"
@@ -37,11 +37,17 @@ ffslice() {
 
   # Build ffmpeg args
   local args=()
-  local start_sec end_sec dur
+  local start_sec start_eof_sec end_sec end_eof_sec dur
+
+  # +42 in the beginning means the same as 42
+  if [[ "${start:0:1}" == "+" ]]; then
+    start="${start:1}"
+  fi
 
   # Handle start
   if [[ "${start:0:1}" == "-" ]]; then
-    args+=("-sseof" "$start")
+    start_eof_sec=$(timetosec "${start:1}")
+    args+=("-sseof" "-$start_eof_sec")
     start_sec=0   # relative from EOF, handled by ffmpeg
   else
     start_sec=$(timetosec "$start")
@@ -55,10 +61,11 @@ ffslice() {
   if [[ -n "$end" ]]; then
     if [[ "${end:0:1}" == "+" ]]; then
       # relative to start
-      dur=${end:1}
+      dur=$(timetosec "${end:1}")
       args+=("-t" "$dur")
     elif [[ "${end:0:1}" == "-" ]]; then
-      args+=("-to" "$end")
+      end_eof_sec=$(timetosec "${end:1}")
+      args+=("-to" "-$end_eof_sec")
     else
       end_sec=$(timetosec "$end")
       if [[ "${start:0:1}" == "-" ]]; then
