@@ -60,6 +60,10 @@ test_timetosec_zero_padded() {
   equals "$(timetosec "01:05:03")" "3903"
 }
 
+test_timetosec_prevents_octal_interpretation() {
+  equals "$(timetosec "1:09")" "69" # Nice
+}
+
 # ---
 # Integration tests for command construction
 # ---
@@ -151,15 +155,21 @@ GRAY="$(ttput setaf 8)"
 
 # Run the tests
 # Note, this expects set -e and will exit on the first failure
+FFSLICE_RAN_TESTS=
 for test_fn in $(declare -F | awk '/declare -f test_/ {print $NF}'); do
   test_desc=$(echo "$test_fn" | sed 's/test_//' | sed 's/_/ /g')
   if [ -n "${1:-}" ] && grep -qviE "$1" <<< "$test_desc"; then
     continue
   fi
+  FFSLICE_RAN_TESTS=1
   printf "%s" "${GRAY}+${NONE} $test_desc"
   $test_fn
   printf "\r%s\n" "${GREEN}✓${NONE}"
 done
 
 echo ""
+if [ -z "$FFSLICE_RAN_TESTS" ]; then
+  echo "No tests were run."
+  exit 1
+fi
 echo "All tests passed!"
